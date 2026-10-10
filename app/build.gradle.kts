@@ -88,5 +88,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.usb.serial)
+    implementation(libs.termux.terminal.view)
     debugImplementation(libs.compose.ui.tooling)
 }

@@ -18,7 +18,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven("https://jitpack.io") {
-            content { includeGroup("com.github.mik3y") }
+            content { includeGroup("com.github.mik3y"); includeGroup("com.termux.termux-app") }
         }
     }
 }

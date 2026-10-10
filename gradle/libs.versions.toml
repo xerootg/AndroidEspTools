@@ -10,6 +10,7 @@ navigation = "2.8.5"
 coreKtx = "1.15.0"
 documentfile = "1.0.1"
 usbSerial = "3.8.1"
+termux = "0.118.0"
 junit = "4.13.2"
 
 [libraries]
@@ -29,6 +30,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 usb-serial = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "usbSerial" }
+termux-terminal-view = { module = "com.termux.termux-app:terminal-view", version.ref = "termux" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

@@ -28,7 +28,10 @@ on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
 - **Advanced**: image info (header, segments, `esp_app_desc` / bootloader descriptor), read/write
   flash status registers, read/write/dump memory, load an image to RAM and run it, security info
   (secure boot, flash encryption, JTAG, key purposes), hard / watchdog / soft reset.
-- **Serial monitor** with configurable baud, reset / enter-bootloader buttons, send line, save log.
+- **Serial terminal**: a real VT100/xterm emulator (Termux's terminal-view) so interactive
+  consoles (`esp_console`, linenoise editing and history, colours) work like `idf.py monitor`.
+  Configurable baud, reset / enter-bootloader buttons, Ctrl / Esc / Tab / arrow extra keys,
+  pinch to zoom, text selection and copy, plain-text log export.
 - Full protocol log with trace mode for debugging a stubborn board.
 
 ## Flashing the RapidRawCloud firmware

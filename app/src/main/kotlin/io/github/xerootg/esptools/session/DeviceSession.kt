@@ -86,6 +86,8 @@ class DeviceSession(private val app: Application, val settings: Settings) {
     private val ansi = Regex("\u001B\\[[0-9;?]*[ -/]*[@-~]")
 
     private var transport: UsbSerialTransport? = null
+    /** Terminal emulator for the serial monitor; fed from the raw listener, writes back to the port. */
+    val terminal: TerminalHost by lazy { TerminalHost(sendToDevice = { bytes -> monitorSendBytes(bytes) }, log = log) }
     private var device: EspDevice? = null
     private var currentJob: Job? = null
     @Volatile private var cancelRequested = false
@@ -275,7 +277,7 @@ class DeviceSession(private val app: Application, val settings: Settings) {
             try {
                 withContext(Dispatchers.IO) {
                     t.baudRate = baud
-                    t.setRawListener { bytes -> appendMonitor(bytes) }
+                    t.setRawListener { bytes -> appendMonitor(bytes); terminal.feed(bytes) }
                     t.purgeInput()
                     if (resetChip) {
                         t.setDtr(false)
@@ -326,6 +328,14 @@ class DeviceSession(private val app: Application, val settings: Settings) {
 
     fun monitorClear() {
         synchronized(monitorLock) { monitorPartial.setLength(0); _monitorLines.value = emptyList() }
+        terminal.clear()
+    }
+
+    private fun monitorSendBytes(bytes: ByteArray) {
+        val t = transport ?: return
+        val s = _state.value
+        if (s !is SessionState.Open || s.mode !is PortMode.Monitor) return
+        try { t.write(bytes) } catch (e: Exception) { post("Send failed: ${e.message}", true) }
     }
 
     fun monitorSend(text: String) {
