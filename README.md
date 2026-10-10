@@ -1,5 +1,9 @@
 # AndroidEspTools
 
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22io.github.xerootg.esptools%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fxerootg%2FAndroidEspTools%22%2C%22author%22%3A%22xerootg%22%2C%22name%22%3A%22ESP%20Tools%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22AndroidEspTools-.%2A%5C%5C%5C%5C.apk%5C%22%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22ESP%20Tools%5C%22%7D%22%7D"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60"></a>
+<a href="https://github.com/xerootg/AndroidEspTools/releases/latest"><img src="https://img.shields.io/github/v/release/xerootg/AndroidEspTools?label=APK&logo=android" alt="Latest release" height="22"></a>
+<a href="https://github.com/xerootg/AndroidEspTools/actions/workflows/ci.yml"><img src="https://github.com/xerootg/AndroidEspTools/actions/workflows/ci.yml/badge.svg" alt="CI" height="22"></a>
+
 A native Android flasher for Espressif chips. Plug a dev board into your phone with a USB OTG
 cable and do everything `esptool.py` does: detect the chip, flash one or many images, dump and
 erase flash, verify, inspect images, poke registers, and watch the serial console.
@@ -35,6 +39,22 @@ with both external USB-UART bridges and the chips' built-in USB interfaces.
 - Full protocol log with trace mode for debugging a stubborn board. Crashes are captured into a
   report (stack trace, device, USB devices, log tail) that the app offers to copy, share or save
   on the next launch; Settings → Diagnostics exports the same without a crash.
+
+## Install
+
+The APK is published on the [releases page](https://github.com/xerootg/AndroidEspTools/releases/latest).
+The easiest way to install and stay up to date is [Obtainium](https://github.com/ImranR98/Obtainium),
+which tracks GitHub releases:
+
+- tap the **Get it on Obtainium** badge above on your phone (it opens Obtainium with the app
+  pre-configured), or
+- in Obtainium, **Add App** and paste `https://github.com/xerootg/AndroidEspTools`, or
+- open `obtainium://add/https://github.com/xerootg/AndroidEspTools` from any app that passes links through.
+
+Obtainium compares the release tag (`vX.Y.Z`) with the installed version, so every release on
+`main` shows up as an update. Until signing secrets are configured, releases are signed with a
+debug key: that is fine for Obtainium updates, but switching to a properly signed build later
+requires an uninstall first. `obtainium.json` in the repo holds the same configuration.
 
 ## Typical workflow
 

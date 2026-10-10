@@ -24,6 +24,9 @@ Notable, user-visible changes. The **Unreleased** section becomes the notes of t
 - **Diagnostics**: protocol log with trace mode, crash reports captured to a file and offered
   for copy/share/save on the next launch, and a one-tap diagnostics export.
 
+### Install
+- One-tap install and updates through Obtainium (badge in the README, `obtainium.json`).
+
 ### Notes
 - Releases are signed with a debug key until the signing secrets are configured; updates over a
   differently signed install require uninstalling first.

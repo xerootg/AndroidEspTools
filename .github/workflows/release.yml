@@ -17,6 +17,8 @@ name: Release
 on:
   push:
     branches: [main]
+    # Documentation-only pushes do not release; they land in the next release's notes.
+    paths-ignore: ['**.md', 'docs/**', 'obtainium.json', 'LICENSE']
   workflow_dispatch:
     inputs:
       bump:
