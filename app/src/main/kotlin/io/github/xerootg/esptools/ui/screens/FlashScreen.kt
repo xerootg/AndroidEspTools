@@ -53,7 +53,7 @@ import io.github.xerootg.esptools.ui.OptionDropdown
 import io.github.xerootg.esptools.ui.SectionCard
 import io.github.xerootg.esptools.ui.SwitchRow
 
-private const val DEFAULT_RELEASE_URL = "https://github.com/xerootg/RapidRawCloud/releases/latest"
+private const val DEFAULT_RELEASE_URL = "https://github.com/"
 
 @Composable
 fun FlashScreen(session: DeviceSession, settings: Settings, vm: FlashViewModel = viewModel()) {
@@ -194,7 +194,7 @@ fun FlashScreen(session: DeviceSession, settings: Settings, vm: FlashViewModel =
                 Column {
                     Text("Release page URL (…/releases/tag/X or …/releases/latest). Pre-releases are included when no tag is given.", style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = releaseText, onValueChange = { releaseText = it }, label = { Text("Release URL") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = releaseText, onValueChange = { releaseText = it }, label = { Text("https://github.com/owner/repo/releases/latest") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = { TextButton(onClick = { showRelease = false; vm.fetchRelease(releaseText) }) { Text("Fetch assets") } },

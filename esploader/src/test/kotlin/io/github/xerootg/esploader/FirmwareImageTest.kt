@@ -60,7 +60,7 @@ class FirmwareImageTest {
 
     @Test
     fun parsesIdfFlasherArgs() {
-        val m = FlashManifests.parse(String(fixture("flasher_args.json")), "rrcloud-ingest").single()
+        val m = FlashManifests.parse(String(fixture("flasher_args.json")), "firmware").single()
         assertEquals(FlashManifest.Source.ESP_IDF_FLASHER_ARGS, m.source)
         assertEquals("ESP32-P4", m.chipFamily)
         assertEquals(listOf(0x2000L, 0x8000L, 0x19000L, 0x20000L), m.parts.map { it.offset })

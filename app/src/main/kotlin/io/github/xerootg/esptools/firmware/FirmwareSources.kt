@@ -85,7 +85,7 @@ object FirmwareSources {
             }
         }
         if (entries.isEmpty()) throw EspException("Zip is empty")
-        // Strip a single common top-level directory (e.g. "rrcloud-ingest-0.1.0-esp32p4/")
+        // Strip a single common top-level directory (e.g. "my-firmware-1.0.0-esp32p4/")
         val tops = entries.keys.map { it.substringBefore('/', "") }.toSet()
         val prefix = if (tops.size == 1 && tops.first().isNotEmpty() && entries.keys.all { it.contains('/') }) tops.first() + "/" else ""
         val files = entries.entries.associate { (k, v) -> val n = k.removePrefix(prefix); n to LoadedFile(n, v, "$name!$k") }

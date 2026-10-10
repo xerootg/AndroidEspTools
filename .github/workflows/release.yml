@@ -8,7 +8,7 @@ name: Release
 # Manual runs (workflow_dispatch) can force a bump level or an explicit version, e.g. to cut the very
 # first release or a hotfix from another branch.
 #
-# Signing uses the same secrets as RapidRawCloud's android build:
+# Signing secrets:
 #   ANDROID_KEY_BASE64   base64 of the .jks keystore
 #   ANDROID_KEY_ALIAS    key alias
 #   ANDROID_KEY_PASSWORD keystore + key password
@@ -165,6 +165,20 @@ jobs:
           (cd dist && sha256sum *.apk > SHA256SUMS)
           ls -la dist
 
+      - name: Release notes from CHANGELOG.md
+        run: |
+          # Body = "Unreleased" section of the changelog (if any), then GitHub's generated notes.
+          awk '/^## /{ if (found) exit } /^## \[?Unreleased/{ found=1; next } found' CHANGELOG.md 2>/dev/null \
+            | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > dist/notes.md || true
+          if [ -s dist/notes.md ]; then
+            printf '%s\n\n' "$(cat dist/notes.md)" > dist/body.md
+          else
+            : > dist/body.md
+          fi
+          printf '**APK**: `AndroidEspTools-%s%s.apk` (versionCode %s). Verify with `SHA256SUMS`.\n' \
+            "${{ needs.version.outputs.version }}" "$([ "${{ steps.signing.outputs.signed }}" = true ] || echo -debugsigned)" "${{ needs.version.outputs.code }}" >> dist/body.md
+          cat dist/body.md
+
       - name: Tag
         run: |
           git config user.name "github-actions[bot]"
@@ -177,6 +191,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: AndroidEspTools ${{ needs.version.outputs.version }}
+          body_path: dist/body.md
           generate_release_notes: true
           prerelease: ${{ contains(needs.version.outputs.version, '-') }}
           files: |

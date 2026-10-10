@@ -4,8 +4,8 @@ A native Android flasher for Espressif chips. Plug a dev board into your phone w
 cable and do everything `esptool.py` does: detect the chip, flash one or many images, dump and
 erase flash, verify, inspect images, poke registers, and watch the serial console.
 
-Built for the [RapidRawCloud ingest firmware](https://github.com/xerootg/RapidRawCloud/releases)
-on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
+It targets the whole ESP family, including the newer RISC-V parts and the ESP32-P4, and works
+with both external USB-UART bridges and the chips' built-in USB interfaces.
 
 ## Features
 
@@ -21,7 +21,7 @@ on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
   SHA-256 re-computation), chip and revision compatibility checks, erase-all, force.
 - **Import** `.bin` files, ESP-IDF build zips (`flasher_args.json` is honoured for offsets and flash
   settings), ESP Web Tools `manifest.json` (local zip or URL, parts downloaded relative to the
-  manifest), direct URLs, and GitHub release assets (the RapidRawCloud releases are one tap away).
+  manifest), direct URLs, and assets of any GitHub release (paste the release page URL).
   Choose "merged image", "components" or "app only" for ESP-IDF bundles.
 - **Dump** any flash region to a file (streamed, MD5 logged), **erase** chip or region,
   **verify** a file against flash with the chip-side MD5.
@@ -36,15 +36,17 @@ on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
   report (stack trace, device, USB devices, log tail) that the app offers to copy, share or save
   on the next launch; Settings → Diagnostics exports the same without a crash.
 
-## Flashing the RapidRawCloud firmware
+## Typical workflow
 
-1. Connect the board's USB-C console port to the phone (OTG). Hold **BOOT** while tapping
-   **RST** if the board does not enter download mode on its own.
-2. *Device* tab: tap **Connect** on the port. The P4 is detected and the stub uploaded.
-3. *Flash* tab: **GitHub release** → fetch `https://github.com/xerootg/RapidRawCloud/releases/latest`
-   → **Get** the `rrcloud-ingest-*.zip` → pick **Merged image** (first install) or **App only**
-   (update that keeps NVS and the LittleFS ledger).
-4. Tap **Flash**. The chip resets into the new firmware; open the *Monitor* tab to watch it boot.
+1. Connect the board with a USB OTG cable. Boards with an auto-reset circuit (or a native USB
+   port) enter download mode on their own; otherwise hold **BOOT** while tapping **RESET**.
+2. *Device* tab: tap **Connect** on the port. The chip is detected, the stub uploaded and the
+   flash identified.
+3. *Flash* tab: add `.bin` files, an ESP-IDF build zip, a manifest URL or a GitHub release asset.
+   Bundles with a `flasher_args.json` fill in the offsets and flash settings; choose
+   **Merged image** for a first install or **App only** to keep NVS and data partitions.
+4. Tap **Flash**. The chip resets into the new firmware; open the *Monitor* tab to watch it boot
+   or to use its console.
 
 ## Project layout
 
@@ -74,14 +76,15 @@ Every push to `main` is released automatically. The workflow looks at the commit
 | anything else (`fix:`, `docs:`, `ci:`, plain messages) | patch |
 
 The commit is tagged `vX.Y.Z`, a release APK (`versionCode = X*10000 + Y*100 + Z`) is built and a
-GitHub release with generated notes, `SHA256SUMS` and the R8 mapping file is published. A head of
+GitHub release is published with `SHA256SUMS` and the R8 mapping file. The release notes are the
+**Unreleased** section of `CHANGELOG.md` followed by GitHub's generated commit list, so describe
+user-visible changes there as you go. A head of
 `main` that is already tagged is left alone. The workflow can also be run by hand with a forced
 bump level or an explicit version (that is how the first release was cut).
 
 ### Release signing
 
-Add these repository secrets (same names as RapidRawCloud's Android build) to get a properly
-signed APK: `ANDROID_KEY_BASE64` (base64 of the `.jks`), `ANDROID_KEY_ALIAS`,
+Add these repository secrets to get a properly signed APK: `ANDROID_KEY_BASE64` (base64 of the `.jks`), `ANDROID_KEY_ALIAS`,
 `ANDROID_KEY_PASSWORD`. Without them the release is signed with a throwaway debug key and the
 asset is suffixed `-debugsigned`.
 
