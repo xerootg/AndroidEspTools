@@ -1,6 +1,7 @@
 package io.github.xerootg.esptools
 
 import android.app.Application
+import io.github.xerootg.esptools.crash.CrashReporter
 import io.github.xerootg.esptools.session.DeviceSession
 import io.github.xerootg.esptools.session.Settings
 
@@ -14,5 +15,6 @@ class EspToolsApp : Application() {
         super.onCreate()
         settings = Settings(this)
         session = DeviceSession(this, settings)
+        CrashReporter.install(this) { session.log.dump() }
     }
 }

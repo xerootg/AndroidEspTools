@@ -134,8 +134,9 @@ fun MonitorScreen(session: DeviceSession, settings: Settings) {
             factory = { ctx ->
                 TerminalView(ctx, null).apply {
                     setTerminalViewClient(viewClient)
-                    setTypeface(Typeface.MONOSPACE)
+                    // setTextSize creates the renderer; setTypeface requires it to exist.
                     setTextSize(spToPx(ctx, textSize))
+                    setTypeface(Typeface.MONOSPACE)
                     setBackgroundColor(0xFF0B1220.toInt())
                     isFocusable = true
                     isFocusableInTouchMode = true

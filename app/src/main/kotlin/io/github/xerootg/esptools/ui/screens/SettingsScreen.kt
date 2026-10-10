@@ -21,6 +21,18 @@ import io.github.xerootg.esptools.session.Settings
 import io.github.xerootg.esptools.ui.OptionDropdown
 import io.github.xerootg.esptools.ui.SectionCard
 import io.github.xerootg.esptools.ui.SwitchRow
+import io.github.xerootg.esptools.crash.CrashReporter
+import io.github.xerootg.esptools.ui.CrashReportFileDialog
+import io.github.xerootg.esptools.ui.ReportDialog
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement as RowArrangement
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import java.io.File
 
 @Composable
 fun SettingsScreen(settings: Settings) {
@@ -51,6 +63,23 @@ fun SettingsScreen(settings: Settings) {
                 SwitchRow("Keep screen on during operations", s.keepScreenOn, { v -> settings.update { it.copy(keepScreenOn = v) } })
                 SwitchRow("Protocol trace in log", s.trace, { v -> settings.update { it.copy(trace = v) } }, description = "Logs every packet. Very verbose.")
             }
+        }
+        item {
+            val context = LocalContext.current
+            var reports by remember { mutableStateOf(CrashReporter.pendingReports(context)) }
+            var openReport by remember { mutableStateOf<File?>(null) }
+            var diagnostics by remember { mutableStateOf<String?>(null) }
+            SectionCard("Diagnostics", subtitle = if (reports.isEmpty()) "No crash reports" else "${reports.size} crash report(s) saved") {
+                Row(horizontalArrangement = RowArrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { diagnostics = CrashReporter.diagnostics(context) }) { Text("Export diagnostics") }
+                    if (reports.isNotEmpty()) TextButton(onClick = { CrashReporter.deleteAll(context); reports = emptyList() }) { Text("Delete all") }
+                }
+                reports.forEach { f ->
+                    TextButton(onClick = { openReport = f }) { Text(f.name) }
+                }
+            }
+            openReport?.let { f -> CrashReportFileDialog(f, onDismiss = { openReport = null }, onDelete = { CrashReporter.delete(context, f); reports = CrashReporter.pendingReports(context) }) }
+            diagnostics?.let { d -> ReportDialog("ESP Tools diagnostics", d, "esptools-diagnostics.txt", onDismiss = { diagnostics = null }) }
         }
         item {
             SectionCard("About") {

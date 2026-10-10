@@ -61,6 +61,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import io.github.xerootg.esptools.crash.CrashReporter
 import io.github.xerootg.esptools.session.DeviceSession
 import io.github.xerootg.esptools.session.LogLevel
 import io.github.xerootg.esptools.session.Settings
@@ -86,6 +87,11 @@ fun EspToolsRoot(session: DeviceSession, settings: Settings) {
     val logLines by session.log.lines.collectAsStateWithLifecycle()
     val prefs by settings.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    var pendingCrash by remember { mutableStateOf(CrashReporter.pendingReports(context).firstOrNull()) }
+    pendingCrash?.let { file ->
+        CrashReportFileDialog(file, onDismiss = { pendingCrash = null }, onDelete = { CrashReporter.delete(context, file) })
+    }
 
     LaunchedEffect(Unit) {
         session.messages.collect { m -> snackbar.showSnackbar(m.text, duration = if (m.isError) SnackbarDuration.Long else SnackbarDuration.Short) }

@@ -32,7 +32,9 @@ on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
   consoles (`esp_console`, linenoise editing and history, colours) work like `idf.py monitor`.
   Configurable baud, reset / enter-bootloader buttons, Ctrl / Esc / Tab / arrow extra keys,
   pinch to zoom, text selection and copy, plain-text log export.
-- Full protocol log with trace mode for debugging a stubborn board.
+- Full protocol log with trace mode for debugging a stubborn board. Crashes are captured into a
+  report (stack trace, device, USB devices, log tail) that the app offers to copy, share or save
+  on the next launch; Settings → Diagnostics exports the same without a crash.
 
 ## Flashing the RapidRawCloud firmware
 
