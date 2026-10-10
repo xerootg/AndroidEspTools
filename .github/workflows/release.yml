@@ -1,7 +1,14 @@
 name: Release
 
-# Tag a commit `vX.Y.Z` (or run manually with a tag) to build a signed release APK and publish
-# it as a GitHub release. Signing uses the same secrets RapidRawCloud's android build uses:
+# Every push to `main` is a release candidate: the next version is derived from the commits since
+# the last `v*` tag (see "Versioning" in README.md), the commit is tagged, a release APK is built and
+# a GitHub release is published. Nothing happens if the head of main is already tagged or there are
+# no commits since the last tag.
+#
+# Manual runs (workflow_dispatch) can force a bump level or an explicit version, e.g. to cut the very
+# first release or a hotfix from another branch.
+#
+# Signing uses the same secrets as RapidRawCloud's android build:
 #   ANDROID_KEY_BASE64   base64 of the .jks keystore
 #   ANDROID_KEY_ALIAS    key alias
 #   ANDROID_KEY_PASSWORD keystore + key password
@@ -9,37 +16,113 @@ name: Release
 # install over a previous release signed with a different key).
 on:
   push:
-    tags: ['v*']
+    branches: [main]
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Existing tag to build (e.g. v0.1.0)'
-        required: true
+      bump:
+        description: 'Bump level (auto = derive from commit messages)'
+        type: choice
+        options: [auto, major, minor, patch]
+        default: auto
+      version:
+        description: 'Explicit version X.Y.Z (overrides bump)'
+        required: false
         type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  version:
+    name: Determine version
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.calc.outputs.release }}
+      version: ${{ steps.calc.outputs.version }}
+      code: ${{ steps.calc.outputs.code }}
+      previous: ${{ steps.calc.outputs.previous }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: calc
+        env:
+          INPUT_BUMP: ${{ inputs.bump || 'auto' }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          last=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n1 || true)
+          head=$(git rev-parse HEAD)
+          echo "last tag: ${last:-<none>}"
+
+          if [ -n "$INPUT_VERSION" ]; then
+            next="${INPUT_VERSION#v}"
+            [[ "$next" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "::error::'$INPUT_VERSION' is not X.Y.Z"; exit 1; }
+            if git rev-parse -q --verify "refs/tags/v$next" >/dev/null; then echo "::error::tag v$next already exists"; exit 1; fi
+          else
+            if [ -n "$last" ] && [ "$(git rev-parse "$last^{commit}")" = "$head" ]; then
+              echo "HEAD is already released as $last; nothing to do."
+              echo "release=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            range=""; [ -n "$last" ] && range="$last..HEAD"
+            # shellcheck disable=SC2086
+            log=$(git log --format='%s%n%b' $range)
+            count=$(git rev-list --count ${range:-HEAD})
+            if [ "$count" = "0" ]; then
+              echo "No commits since $last; nothing to do."
+              echo "release=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            bump="$INPUT_BUMP"
+            if [ "$bump" = "auto" ]; then
+              bump=patch
+              if echo "$log" | grep -Eiq '^(feat|feature)(\(.*\))?:'; then bump=minor; fi
+              if echo "$log" | grep -Eq '^[a-z]+(\(.*\))?!:|^BREAKING[ -]CHANGE'; then bump=major; fi
+            fi
+            if [ -z "$last" ]; then
+              base="0.0.0"
+            else
+              base="${last#v}"; base="${base%%-*}"
+            fi
+            IFS=. read -r major minor patch <<< "$base"
+            # 0.x: breaking changes bump the minor version, the API is not stable yet.
+            if [ "$bump" = "major" ] && [ "$major" = "0" ]; then bump=minor; fi
+            case "$bump" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+            esac
+            next="$major.$minor.$patch"
+            [ -n "$last" ] || next="0.1.0"
+            echo "bump=$bump ($count commit(s) since ${last:-start})"
+          fi
+
+          IFS='.-' read -r major minor patch _ <<< "$next"
+          code=$(( major * 10000 + minor * 100 + patch ))
+          {
+            echo "release=true"
+            echo "version=$next"
+            echo "code=$code"
+            echo "previous=$last"
+          } >> "$GITHUB_OUTPUT"
+          echo "next version: $next (versionCode $code)"
+
   release:
+    name: Build and publish
+    needs: version
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
-
-      - name: Resolve version from tag
-        id: ver
-        run: |
-          tag='${{ inputs.tag || github.ref_name }}'
-          name="${tag#v}"
-          IFS='.-' read -r major minor patch _ <<< "$name"
-          code=$(( ${major:-0} * 10000 + ${minor:-0} * 100 + ${patch:-0} ))
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
-          echo "code=$code" >> "$GITHUB_OUTPUT"
-          echo "version $name (code $code) from $tag"
+          fetch-tags: true
 
       - uses: actions/setup-java@v4
         with:
@@ -70,28 +153,32 @@ jobs:
           fi
 
       - name: Build release APK
-        run: ./gradlew :app:assembleRelease -PversionName=${{ steps.ver.outputs.name }} -PversionCode=${{ steps.ver.outputs.code }} --no-daemon
+        run: ./gradlew :app:assembleRelease -PversionName=${{ needs.version.outputs.version }} -PversionCode=${{ needs.version.outputs.code }} --no-daemon
 
       - name: Package artifacts
-        id: pkg
         run: |
           mkdir -p dist
           suffix=""
           [ "${{ steps.signing.outputs.signed }}" = "true" ] || suffix="-debugsigned"
-          apk="dist/AndroidEspTools-${{ steps.ver.outputs.name }}${suffix}.apk"
-          cp app/build/outputs/apk/release/app-release.apk "$apk"
-          cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-${{ steps.ver.outputs.name }}.txt" || true
+          cp app/build/outputs/apk/release/app-release.apk "dist/AndroidEspTools-${{ needs.version.outputs.version }}${suffix}.apk"
+          cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-${{ needs.version.outputs.version }}.txt" || true
           (cd dist && sha256sum *.apk > SHA256SUMS)
-          echo "apk=$apk" >> "$GITHUB_OUTPUT"
           ls -la dist
+
+      - name: Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.version.outputs.version }}" -m "AndroidEspTools ${{ needs.version.outputs.version }}"
+          git push origin "v${{ needs.version.outputs.version }}"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: AndroidEspTools ${{ steps.ver.outputs.name }}
+          tag_name: v${{ needs.version.outputs.version }}
+          name: AndroidEspTools ${{ needs.version.outputs.version }}
           generate_release_notes: true
-          prerelease: ${{ contains(steps.ver.outputs.name, '-') }}
+          prerelease: ${{ contains(needs.version.outputs.version, '-') }}
           files: |
             dist/*.apk
             dist/SHA256SUMS

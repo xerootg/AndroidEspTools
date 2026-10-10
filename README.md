@@ -57,8 +57,24 @@ on the Waveshare ESP32-P4-WIFI6-POE-ETH, but it is a general-purpose tool.
 ./gradlew :esploader:test :app:assembleDebug
 ```
 
-Requires JDK 17+ and the Android SDK (platform 35). CI builds every push; tagging `vX.Y.Z`
-builds a release APK and publishes a GitHub release.
+Requires JDK 17+ and the Android SDK (platform 35). CI runs the tests, a debug build and lint on
+every push.
+
+### Versioning and releases
+
+Every push to `main` is released automatically. The workflow looks at the commits since the last
+`v*` tag and bumps the version by their messages (conventional-commit style, semver-ish):
+
+| Commit subject | Bump |
+| --- | --- |
+| `feat!: …`, `fix!: …` or a `BREAKING CHANGE` footer | major (minor while still on 0.x) |
+| `feat: …` / `feat(scope): …` | minor |
+| anything else (`fix:`, `docs:`, `ci:`, plain messages) | patch |
+
+The commit is tagged `vX.Y.Z`, a release APK (`versionCode = X*10000 + Y*100 + Z`) is built and a
+GitHub release with generated notes, `SHA256SUMS` and the R8 mapping file is published. A head of
+`main` that is already tagged is left alone. The workflow can also be run by hand with a forced
+bump level or an explicit version (that is how the first release was cut).
 
 ### Release signing
 
